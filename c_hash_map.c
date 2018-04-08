@@ -1,9 +1,9 @@
-#include "c_hash_map.h"
+п»ї#include "c_hash_map.h"
 
-// Создание пустого хэш-отображения.
-// В случае успеха возвращает указатель на созданное отображение.
-// В случае ошибки возвращает NULL.
-// Позволяет создать отображение с нулем слотов.
+// РЎРѕР·РґР°РЅРёРµ РїСѓСЃС‚РѕРіРѕ С…СЌС€-РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ.
+// Р’ СЃР»СѓС‡Р°Рµ СѓСЃРїРµС…Р° РІРѕР·РІСЂР°С‰Р°РµС‚ СѓРєР°Р·Р°С‚РµР»СЊ РЅР° СЃРѕР·РґР°РЅРЅРѕРµ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ.
+// Р’ СЃР»СѓС‡Р°Рµ РѕС€РёР±РєРё РІРѕР·РІСЂР°С‰Р°РµС‚ NULL.
+// РџРѕР·РІРѕР»СЏРµС‚ СЃРѕР·РґР°С‚СЊ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ СЃ РЅСѓР»РµРј СЃР»РѕС‚РѕРІ.
 c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key),
                               size_t (*const _comp_func)(const void *const _a,
                                                          const void *const _b),
@@ -22,7 +22,7 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key)
 
     if (_slots_count > 0)
     {
-        // Определим размер новых слотов.
+        // РћРїСЂРµРґРµР»РёРј СЂР°Р·РјРµСЂ РЅРѕРІС‹С… СЃР»РѕС‚РѕРІ.
         const size_t new_slots_size = _slots_count * sizeof(void*);
         if ( (new_slots_size == 0) ||
              (new_slots_size / _slots_count != sizeof(void*)) )
@@ -30,7 +30,7 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key)
             return NULL;
         }
 
-        // Попытаемся выделить память под новые слоты.
+        // РџРѕРїС‹С‚Р°РµРјСЃСЏ РІС‹РґРµР»РёС‚СЊ РїР°РјСЏС‚СЊ РїРѕРґ РЅРѕРІС‹Рµ СЃР»РѕС‚С‹.
         new_slots = malloc(new_slots_size);
         if (new_slots == NULL) return NULL;
 
