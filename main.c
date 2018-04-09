@@ -1,8 +1,10 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include "c_hash_map.h"
 
 int main()
 {
-    printf("Hello world!\n");
+
+    getchar();
     return 0;
 }
