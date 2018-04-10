@@ -51,4 +51,23 @@ ptrdiff_t c_hash_map_delete(c_hash_map *const _hash_map,
 ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
                             const void *const _key,
                             const void *const _data);
+
+ptrdiff_t c_hash_map_erase(c_hash_map *const _hash_map,
+                           const void *const _key,
+                           void (*const _del_key_func)(void *const _key),
+                           void (*const _del_data_func)(void *const _data));
+
+ptrdiff_t c_hash_map_resize(c_hash_map *const _hash_map,
+                            const size_t _slots_count);
+
+ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
+                           const void *const _key);
+
+const void *c_hash_map_at(const c_hash_map *const _hash_map,
+                          const void *const _key);
+
+ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
+                              void (*const _key_func)(const void *const _key),
+                              void (*const _data_func)(const void *const _data));
+
 #endif
