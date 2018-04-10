@@ -63,7 +63,7 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key)
 }
 
 // Удаляет хэш-отображение.
-// В случае успеха возвращает > 0, наче < 0.
+// В случае успеха возвращает > 0, иначе < 0.
 ptrdiff_t c_hash_map_delete(c_hash_map *const _hash_map,
                             void (*const _del_key_func)(void *const _key),
                             void (*const _del_data_func)(void *const _data))
