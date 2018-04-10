@@ -70,4 +70,8 @@ ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
                               void (*const _key_func)(const void *const _key),
                               void (*const _data_func)(const void *const _data));
 
+ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
+                           void (*const _del_key_func)(void *const _key),
+                           void (*const _del_data_func)(void *const _data));
+
 #endif

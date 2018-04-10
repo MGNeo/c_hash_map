@@ -94,6 +94,9 @@ int main()
     // Печать содержимого хэш-отображения.
     c_hash_map_for_each(hash_map, print_key_func_s, print_data_func_f);
 
+    // Очистка хэш-отображения ото всех элементов.
+    c_hash_map_clear(hash_map, NULL, NULL);
+
     // Удаление хэш-отображения.
     c_hash_map_delete(hash_map, NULL, NULL);
 

@@ -558,3 +558,51 @@ ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
 
     return 1;
 }
+
+// Очищает хэш-отображение ото всех элементов, сохраняя количество слотов.
+// В случае успеха возвращает > 0.
+// Если в хэш-отображении не было элементов, возвращает 0.
+// В случае ошибки возвращает < 0.
+ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
+                           void (*const _del_key_func)(void *const _key),
+                           void (*const _del_data_func)(void *const _data))
+{
+    if (_hash_map == NULL) return -1;
+
+    if (_hash_map->nodes_count == 0) return 0;
+
+    size_t count = 0;
+
+    for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s)
+    {
+        if (((void**)_hash_map->slots)[s] != NULL)
+        {
+            void *select_node = ((void**)_hash_map->slots)[s],
+                 *delete_node;
+            while (select_node != NULL)
+            {
+                delete_node = select_node;
+                select_node = *((void**)select_node);
+
+                if (_del_key_func != NULL)
+                {
+                    _del_key_func( (uint8_t*)delete_node + sizeof(void*) + sizeof(size_t) );
+                }
+
+                if (_del_data_func != NULL)
+                {
+                    _del_data_func( (uint8_t*)delete_node + sizeof(void*) + sizeof(size_t) + _hash_map->key_size);
+                }
+
+                free(delete_node);
+                --count;
+            }
+
+            ((void**)_hash_map->slots)[s] = NULL;
+        }
+    }
+
+    _hash_map->nodes_count = 0;
+
+    return 1;
+}
