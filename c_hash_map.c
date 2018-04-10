@@ -571,7 +571,7 @@ ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
 
     if (_hash_map->nodes_count == 0) return 0;
 
-    size_t count = 0;
+    size_t count = _hash_map->nodes_count;
 
     for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s)
     {
