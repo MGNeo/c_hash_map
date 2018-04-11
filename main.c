@@ -87,9 +87,9 @@ int main(int argc, char **argv)
     c_hash_map_resize(hash_map, 10);
 
     // Заменяем данные по ключу two_key.
-    // Сперва удаляем элемент с таким ключем.
+    // Сперва удаляем элемент с таким ключом.
     c_hash_map_erase(hash_map, &two_key, NULL, NULL);
-    // Затем вставляем элемент с таким же ключем, но уже другими данными.
+    // Затем вставляем элемент с таким же ключом, но уже другими данными.
     value = 3.1415f;
     c_hash_map_insert(hash_map, &two_key, &value);
 
