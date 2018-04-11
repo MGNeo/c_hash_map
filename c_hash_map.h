@@ -1,4 +1,17 @@
-﻿#ifndef C_HASH_MAP_H
+﻿/*
+    Заголовочный файл хэш-отображения c_hash_map
+    Разработка, отладка и сборка производилась в:
+    ОС: Windows 10/x64
+    IDE: Code::Blocks 17.12
+    Компилятор: default Code::Blocks 17.12 MinGW
+    Разработчик: Глухманюк Максим
+    Эл. почта: mgneo@yandex.ru
+    Место: Российская Федерация, Самарская область, Сызрань
+    Дата: 11.04.2018
+    Лицензия: GPLv3
+*/
+
+#ifndef C_HASH_MAP_H
 #define C_HASH_MAP_H
 
 #include <stdlib.h>

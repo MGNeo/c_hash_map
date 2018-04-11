@@ -54,7 +54,7 @@ void print_data_func_f(const void *const _data)
     return;
 }
 
-int main()
+int main(int argc, char **argv)
 {
     // Создание пустого хэш-отображения (ключ - указатель на строку, данные - float).
     c_hash_map *hash_map = c_hash_map_create(hash_func_s,
