@@ -12,8 +12,7 @@ size_t hash_func_s(const void *const _key)
 
     while(*key != 0)
     {
-        hash += *key;
-        ++key;
+        hash += *(key++);
     }
 
     return hash;
