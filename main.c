@@ -86,12 +86,14 @@ int main(int argc, char **argv)
     // Ужимаем хэш-отображение.
     c_hash_map_resize(hash_map, 10);
 
-    // Заменяем данные по ключу two_key.
-    // Сперва удаляем элемент с таким ключом.
-    c_hash_map_erase(hash_map, &two_key, NULL, NULL);
-    // Затем вставляем элемент с таким же ключом, но уже другими данными.
-    value = 3.1415f;
-    c_hash_map_insert(hash_map, &two_key, &value);
+    // Заменяем данные, хранящиеся по ключу two_key,
+    // при этом элемент с заданным ключем не удаляется и не пересоздается,
+    // меняются ТОЛЬКО данные элемента хэш-отображения.
+    float *p_float = c_hash_map_at(hash_map, &two_key);
+    if (p_float != NULL)
+    {
+        *p_float = 3.1415f;
+    }
 
     // Печать содержимого хэш-отображения.
     c_hash_map_for_each(hash_map, print_key_func_s, print_data_func_f);

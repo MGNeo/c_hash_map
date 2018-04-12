@@ -4,7 +4,6 @@
     ОС: Windows 10/x64
     IDE: Code::Blocks 17.12
     Компилятор: default Code::Blocks 17.12 MinGW
-    
     Разработчик: Глухманюк Максим
     Эл. почта: mgneo@yandex.ru
     Место: Российская Федерация, Самарская область, Сызрань
@@ -80,7 +79,7 @@ ptrdiff_t c_hash_map_resize(c_hash_map *const _hash_map,
 ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
                            const void *const _key);
 
-const void *c_hash_map_at(const c_hash_map *const _hash_map,
+void *c_hash_map_at(const c_hash_map *const _hash_map,
                           const void *const _key);
 
 ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,

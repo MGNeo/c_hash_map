@@ -4,7 +4,6 @@
     ОС: Windows 10/x64
     IDE: Code::Blocks 17.12
     Компилятор: default Code::Blocks 17.12 MinGW
-    
     Разработчик: Глухманюк Максим
     Эл. почта: mgneo@yandex.ru
     Место: Российская Федерация, Самарская область, Сызрань
@@ -435,7 +434,7 @@ ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
 // Обращение к данным с заданным ключом.
 // В случае успеха возвращает указатель на данные, которые связаны с заданным ключом.
 // В случае ошибки, или если таких данных нет, возвращает NULL.
-const void *c_hash_map_at(const c_hash_map *const _hash_map,
+void *c_hash_map_at(const c_hash_map *const _hash_map,
                           const void *const _key)
 {
     if (_hash_map == NULL) return NULL;
