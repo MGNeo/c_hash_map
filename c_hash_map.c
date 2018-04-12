@@ -17,7 +17,7 @@
 // Создание пустого хэш-отображения.
 // В случае успеха возвращает указатель на созданное отображение.
 // В случае ошибки возвращает NULL.
-// Позволяет создать отображение с нулем слотов.
+// Позволяет создать хэш-отображение с нулем слотов.
 c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key),
                               size_t (*const _comp_func)(const void *const _a,
                                                          const void *const _b),
