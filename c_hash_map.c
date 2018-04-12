@@ -436,7 +436,7 @@ ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
 // В случае успеха возвращает указатель на данные, которые связаны с заданным ключом.
 // В случае ошибки, или если таких данных нет, возвращает NULL.
 void *c_hash_map_at(const c_hash_map *const _hash_map,
-                          const void *const _key)
+                    const void *const _key)
 {
     if (_hash_map == NULL) return NULL;
     if (_key == NULL) return NULL;
