@@ -63,7 +63,7 @@ int main(int argc, char **argv)
                                              1000,
                                              1.0f);
 
-    // Вставка элементов в хэш множество.
+    // Вставка элементов в хэш-отображение.
     const char *const one_key = "one";
     const char *const two_key = "two";
     const char *const three_key = "three";
