@@ -13,6 +13,7 @@ size_t hash_s(const void *const _data)
 
     const char *c = (char*)_data;
     size_t hash = 0;
+    
     while (*c != 0)
     {
         hash += *(c++);
@@ -45,8 +46,10 @@ size_t comp_s(const void *const _a,
 void key_print(const void *const _key)
 {
     if (_key == NULL) return;
+    
     const char *const key = (char*)_key;
     printf("key: %s ", key);
+    
     return;
 }
 
@@ -54,8 +57,10 @@ void key_print(const void *const _key)
 void data_print(void *const _data)
 {
     if (_data == NULL) return;
+    
     const float *data = (float*)_data;
     printf("data: %f\n", *data);
+    
     return;
 }
 
@@ -63,7 +68,9 @@ void data_print(void *const _data)
 void del_data(void *const _data)
 {
     if (_data == NULL) return;
+    
     free(_data);
+    
     return;
 }
 
