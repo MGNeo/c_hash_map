@@ -21,31 +21,27 @@
 c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key),
                               size_t (*const _comp_func)(const void *const _a,
                                                          const void *const _b),
-                              const size_t _key_size,
-                              const size_t _data_size,
                               const size_t _slots_count,
                               const float _max_load_factor)
 {
     if (_hash_func == NULL) return NULL;
     if (_comp_func == NULL) return NULL;
-    if (_key_size == 0) return NULL;
-    if (_data_size == 0) return NULL;
     if (_max_load_factor <= 0.0f) return NULL;
 
-    void *new_slots = NULL;
+    c_hash_map_node **new_slots = NULL;
 
     if (_slots_count > 0)
     {
         // Определим размер новых слотов.
-        const size_t new_slots_size = _slots_count * sizeof(void*);
+        const size_t new_slots_size = _slots_count * sizeof(c_hash_map_node*);
         if ( (new_slots_size == 0) ||
-             (new_slots_size / _slots_count != sizeof(void*)) )
+             (new_slots_size / _slots_count != sizeof(c_hash_map_node*)) )
         {
             return NULL;
         }
 
         // Попытаемся выделить память под новые слоты.
-        new_slots = malloc(new_slots_size);
+        new_slots = (c_hash_map_node**)malloc(new_slots_size);
         if (new_slots == NULL) return NULL;
 
         // Обнулим слоты.
@@ -62,9 +58,6 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key)
 
     new_hash_map->hash_func = _hash_func;
     new_hash_map->comp_func = _comp_func;
-
-    new_hash_map->key_size = _key_size;
-    new_hash_map->data_size = _data_size;
 
     new_hash_map->slots_count = _slots_count;
     new_hash_map->nodes_count = 0;
@@ -95,8 +88,8 @@ ptrdiff_t c_hash_map_delete(c_hash_map *const _hash_map,
 
 // Вставка данных в хэш-отображение.
 // В случае успешной вставки возвращает > 0.
-// Если данные с указанным ключом уже есть в хэш-отображении, функция возвращает 0, не перезаписывая старые
-// данные новыми.
+// Если данные с указанным ключом уже есть в хэш-отображении, функция возвращает 0,
+// не перезаписывая старые данные новыми.
 // В случае ошибки возвращает < 0.
 ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
                             const void *const _key,
@@ -154,20 +147,8 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
 
     // Вставляем.
 
-    // Определим размер создаваемого узла.
-    size_t new_node_size = _hash_map->key_size + _hash_map->data_size;
-    if (new_node_size < _hash_map->key_size)
-    {
-        return -9;
-    }
-    new_node_size += sizeof(void*) + sizeof(size_t);
-    if (new_node_size < sizeof(void*) + sizeof(size_t))
-    {
-        return -10;
-    }
-
     // Попытаемся выделить память под узел.
-    void *const new_node = malloc(new_node_size);
+    c_hash_map_node *const new_node = (c_hash_map_node*)malloc(sizeof(c_hash_map_node));
     if (new_node == NULL)
     {
         return -11;
@@ -180,17 +161,17 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
     const size_t presented_hash = hash % _hash_map->slots_count;
 
     // Заносим в узел непрвиеденный хэш ключа вставляемых данных.
-    *((size_t*)((void**)new_node + 1)) = hash;
+    new_node->hash = hash;
 
-    // Копируем в узел ключ.
-    memcpy((uint8_t*)new_node + sizeof(void*) + sizeof(size_t), _key, _hash_map->key_size);
+    // Связываем узел с ключем.
+    new_node->key = (void*)_key;
 
-    // Копируем в узел данные.
-    memcpy((uint8_t*)new_node + sizeof(void*) + sizeof(size_t) + _hash_map->key_size, _data, _hash_map->data_size);
+    // Связываем узел с данными.
+    new_node->data = (void*)_data;
 
     // Добавляем узел в слот.
-    *((void**)new_node) = ((void**)_hash_map->slots)[presented_hash];
-    ((void**)_hash_map->slots)[presented_hash] = new_node;
+    new_node->next = _hash_map->slots[presented_hash];
+    _hash_map->slots[presented_hash] = new_node;
 
     ++_hash_map->nodes_count;
 
@@ -218,41 +199,41 @@ ptrdiff_t c_hash_map_erase(c_hash_map *const _hash_map,
     const size_t presented_hash = hash % _hash_map->slots_count;
 
     // Если требуемый слот пуст, значит данных с таким ключом в хэш-отображении нет.
-    if (((void**)_hash_map->slots)[presented_hash] == NULL)
+    if (_hash_map->slots[presented_hash] == NULL)
     {
         return 0;
     }
 
     // Просмотр слота на наличие данных с заданным ключом.
-    void *select_node = ((void**)_hash_map->slots)[presented_hash],
-         *prev_node = &((void**)_hash_map)[presented_hash];
+    c_hash_map_node *select_node = _hash_map->slots[presented_hash],
+                    *prev_node = NULL;
 
     while (select_node != NULL)
     {
-        // Неприведенный хэш ключа узла.
-        const size_t hash_n = *((size_t*)((void**)select_node + 1));
-
-        if (hash == hash_n)
+        if (hash == select_node->hash)
         {
-            // Ключ узла.
-            void *key_n = (uint8_t*)select_node + sizeof(void*) + sizeof(size_t);
-            if (_hash_map->comp_func(_key, key_n) > 0)
+            if (_hash_map->comp_func(_key, select_node->key) > 0)
             {
                 // Удаляем данный узел.
 
                 // Ампутация узла из слота.
-                *((void**)prev_node) = *((void**)select_node);
+                if (prev_node != NULL)
+                {
+                    prev_node->next = select_node->next;
+                } else {
+                    _hash_map->slots[presented_hash] = select_node->next;
+                }
 
                 // Если для ключа задана функция удаления, вызываем ее.
                 if (_del_key_func != NULL)
                 {
-                    _del_key_func( (uint8_t*)select_node + sizeof(void*) + sizeof(size_t) );
+                    _del_key_func( select_node->key );
                 }
 
                 // Если для данных задана функция удаления, вызываем ее.
                 if (_del_data_func != NULL)
                 {
-                    _del_data_func( (uint8_t*)select_node + sizeof(void*) + sizeof(size_t) + _hash_map->key_size );
+                    _del_data_func( select_node->data );
                 }
 
                 // Удаляем узел.
@@ -265,7 +246,7 @@ ptrdiff_t c_hash_map_erase(c_hash_map *const _hash_map,
         }
 
         prev_node = select_node;
-        select_node = *((void**)select_node);
+        select_node = select_node->next;
     }
 
     return 0;
@@ -299,15 +280,15 @@ ptrdiff_t c_hash_map_resize(c_hash_map *const _hash_map,
         return 1;
     } else {
         // Определяем новый размер, необходимый под slots.
-        const size_t new_slots_size = _slots_count * sizeof(void*);
+        const size_t new_slots_size = _slots_count * sizeof(c_hash_map_node*);
         if ( (new_slots_size == 0) ||
-             (new_slots_size / _slots_count != sizeof(void*)) )
+             (new_slots_size / _slots_count != sizeof(c_hash_map_node*)) )
         {
             return -3;
         }
 
         // Попытаемся выделить память под новые слоты.
-        void *const new_slots = malloc(new_slots_size);
+        c_hash_map_node **const new_slots = (c_hash_map_node**)malloc(new_slots_size);
         if (new_slots == NULL)
         {
             return -4;
@@ -322,23 +303,21 @@ ptrdiff_t c_hash_map_resize(c_hash_map *const _hash_map,
             size_t count = _hash_map->nodes_count;
             for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s)
             {
-                if (((void**)_hash_map->slots)[s] != NULL)
+                if (_hash_map->slots[s] != NULL)
                 {
-                    void *select_node = ((void**)_hash_map->slots)[s],
-                         *relocate_node;
+                    c_hash_map_node *select_node = _hash_map->slots[s],
+                                    *relocate_node;
 
                     while (select_node != NULL)
                     {
                         relocate_node = select_node;
-                        select_node = *((void**)select_node);
+                        select_node = select_node->next;
 
-                        // Неприведенный хэш ключа переносимого узла.
-                        const size_t hash = *((size_t*)((void**)relocate_node + 1));
                         // Хэш ключа переносимого узла, приведенный к новому количеству слотов.
-                        const size_t presented_hash = hash % _slots_count;
+                        const size_t presented_hash = relocate_node->hash % _slots_count;
 
-                        *((void**)relocate_node) = ((void**)new_slots)[presented_hash];
-                        ((void**)new_slots)[presented_hash] = relocate_node;
+                        relocate_node->next = new_slots[presented_hash];
+                        new_slots[presented_hash] = relocate_node;
 
                         --count;
                     }
@@ -375,25 +354,19 @@ ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
     // Приведенный хэш искомого ключа.
     const size_t presented_hash = hash % _hash_map->slots_count;
 
-    void *select_node = ((void**)_hash_map->slots)[presented_hash];
+    c_hash_map_node *select_node = _hash_map->slots[presented_hash];
 
     while (select_node != NULL)
     {
-        // Неприведенный хэш ключа узла.
-        const size_t hash_n = *((size_t*)((void**)select_node + 1));
-
-        if (hash == hash_n)
+        if (hash == select_node->hash)
         {
-            // Ключ узла.
-            const void *const key_n = (uint8_t*)select_node + sizeof(void*) + sizeof(size_t);
-
-            if (_hash_map->comp_func(_key, key_n) > 0)
+            if (_hash_map->comp_func(_key, select_node->key) > 0)
             {
                 return 1;
             }
         }
 
-        select_node = *((void**)select_node);
+        select_node = select_node->next;
     }
 
     return 0;
@@ -416,25 +389,19 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
     // Приведенный хэш искомого ключа.
     const size_t presented_hash = hash % _hash_map->slots_count;
 
-    void *select_node = ((void**)_hash_map->slots)[presented_hash];
+    c_hash_map_node *select_node = _hash_map->slots[presented_hash];
 
     while (select_node != NULL)
     {
-        // Неприведенный хэш ключа узла.
-        const size_t hash_n = *((size_t*)((void**)select_node + 1));
-
-        if (hash == hash_n)
+        if (hash == select_node->hash)
         {
-            // Ключ узла.
-            const void *const key_n = (uint8_t*)select_node + sizeof(void*) + sizeof(size_t);
-
-            if (_hash_map->comp_func(_key, key_n) > 0)
+            if (_hash_map->comp_func(_key, select_node->key) > 0)
             {
-                return (uint8_t*)select_node + sizeof(void*) + sizeof(size_t) + _hash_map->key_size;
+                return select_node->data;
             }
         }
 
-        select_node = *((void**)select_node);
+        select_node = select_node->next;
     }
 
     return 0;
@@ -446,7 +413,7 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
 // В случае ошибки возвращает < 0.
 ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
                               void (*const _key_func)(const void *const _key),
-                              void (*const _data_func)(const void *const _data))
+                              void (*const _data_func)(void *const _data))
 {
     if (_hash_map == NULL) return -1;
     if (_key_func == NULL) return -2;
@@ -458,16 +425,16 @@ ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
 
     for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s)
     {
-        if (((void**)_hash_map->slots)[s] != NULL)
+        if (_hash_map->slots[s] != NULL)
         {
-            void *select_node = ((void**)_hash_map->slots)[s];
+            c_hash_map_node *select_node = _hash_map->slots[s];
 
             while (select_node != NULL)
             {
-                _key_func( (uint8_t*)select_node + sizeof(void*) + sizeof(size_t) );
-                _data_func( (uint8_t*)select_node + sizeof(void*) + sizeof(size_t) + _hash_map->key_size );
+                _key_func( select_node->key );
+                _data_func( select_node->data );
 
-                select_node = *((void**)select_node);
+                select_node = select_node->next;
 
                 --count;
             }
@@ -493,30 +460,30 @@ ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
 
     for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s)
     {
-        if (((void**)_hash_map->slots)[s] != NULL)
+        if (_hash_map->slots[s] != NULL)
         {
-            void *select_node = ((void**)_hash_map->slots)[s],
+            c_hash_map_node *select_node = _hash_map->slots[s],
                  *delete_node;
             while (select_node != NULL)
             {
                 delete_node = select_node;
-                select_node = *((void**)select_node);
+                select_node = select_node->next;
 
                 if (_del_key_func != NULL)
                 {
-                    _del_key_func( (uint8_t*)delete_node + sizeof(void*) + sizeof(size_t) );
+                    _del_key_func( delete_node->key );
                 }
 
                 if (_del_data_func != NULL)
                 {
-                    _del_data_func( (uint8_t*)delete_node + sizeof(void*) + sizeof(size_t) + _hash_map->key_size);
+                    _del_data_func( delete_node->data );
                 }
 
                 free(delete_node);
                 --count;
             }
 
-            ((void**)_hash_map->slots)[s] = NULL;
+            _hash_map->slots[s] = NULL;
         }
     }
 

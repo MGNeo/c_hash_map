@@ -4,7 +4,7 @@
     ОС: Windows 10/x64
     IDE: Code::Blocks 17.12
     Компилятор: default Code::Blocks 17.12 MinGW
-    
+
     Разработчик: Глухманюк Максим
     Эл. почта: mgneo@yandex.ru
     Место: Российская Федерация, Самарская область, Сызрань
@@ -24,15 +24,13 @@
 // Количество слотов, задаваемое хэш-отображению с нулем слотов при автоматическом расширении.
 #define EXTENSION_FROM_ZERO ( (size_t) 1024 )
 
-/* Слот - это односвязный список.
- *
- * Структура узла слота:
- *
- * Что за данные:                   |__next___|___hash___|_________key_________|_________data_________|
- * Представление:                   |__void*__|__size_t__|__uint8_t[key_size]__|__uint8_t[data_size]__|
- *
- * Указатель на узел указывает сюда ^
- */
+typedef struct s_c_hash_map_node
+{
+    struct s_c_hash_map_node *next;
+    size_t hash;
+    void *key,
+         *data;
+} c_hash_map_node;
 
 typedef struct s_c_hash_map
 {
@@ -43,21 +41,17 @@ typedef struct s_c_hash_map
     size_t (*comp_func)(const void *const _a,
                         const void *const _b);
 
-    size_t key_size;
-    size_t data_size;
     size_t slots_count;
     size_t nodes_count;
 
     float max_load_factor;
 
-    void *slots;
+    c_hash_map_node **slots;
 } c_hash_map;
 
 c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key),
                               size_t (*const _comp_func)(const void *const _a,
                                                          const void *const _b),
-                              const size_t _key_size,
-                              const size_t _data_size,
                               const size_t _slots_count,
                               const float _max_load_factor);
 
@@ -85,7 +79,7 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
 
 ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
                               void (*const _key_func)(const void *const _key),
-                              void (*const _data_func)(const void *const _data));
+                              void (*const _data_func)(void *const _data));
 
 ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
                            void (*const _del_key_func)(void *const _key),

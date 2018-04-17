@@ -1,33 +1,39 @@
 ﻿#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include "c_hash_map.h"
 
-// Функция вычисления хэша для строки.
-size_t hash_func_s(const void *const _key)
+// Проверка возвращаемых значений не выполняется для упрощения.
+
+// Функция генерации хэша из строки.
+size_t hash_s(const void *const _data)
 {
-    if (_key == NULL) return 0;
+    if (_data == NULL) return 0;
 
-    const char *key = *((char**)_key);
+    const char *c = (char*)_data;
     size_t hash = 0;
-
-    while(*key != 0)
+    while (*c != 0)
     {
-        hash += *(key++);
+        hash += *(c++);
     }
 
     return hash;
 }
 
 // Функция детального сравнения ключей-строк.
-size_t comp_func_s(const void *const _a,
+size_t comp_s(const void *const _a,
                    const void *const _b)
 {
-    if ( (_a == NULL) || (_b == NULL) ) return 0;
+    if ( (_a == NULL) || (_b == NULL) )
+    {
+        return 0;
+    }
 
-    const char *const p_string_a = *((char**)_a);
-    const char *const p_string_b = *((char**)_b);
+    const char *const a = (char*)_a;
+    const char *const b = (char*)_b;
 
-    if (strcmp(p_string_a, p_string_b) == 0)
+    if (strcmp(a, b) == 0)
     {
         return 1;
     }
@@ -35,74 +41,76 @@ size_t comp_func_s(const void *const _a,
     return 0;
 }
 
-// Функция печати строкового ключа элемента хэш-отображения.
-void print_key_func_s(const void *const _key)
+// Функция печати ключа.
+void key_print(const void *const _key)
 {
-    const char *const p_string = *((char**)_key);
-    printf("KEY: %s ", p_string);
-
+    if (_key == NULL) return;
+    const char *const key = (char*)_key;
+    printf("key: %s ", key);
     return;
 }
 
-// Функция печати float данных элемента хэш-отображения.
-void print_data_func_f(const void *const _data)
+// Функция печати данных.
+void data_print(void *const _data)
 {
-    const float value = *((float*)_data);
-    printf("DATA: %f\n", value);
+    if (_data == NULL) return;
+    const float *data = (float*)_data;
+    printf("data: %f\n", *data);
+    return;
+}
 
+// Функция удаления данных хэш-отображения.
+void del_data(void *const _data)
+{
+    if (_data == NULL) return;
+    free(_data);
     return;
 }
 
 int main(int argc, char **argv)
 {
-    // Создание пустого хэш-отображения (ключ - указатель на строку, данные - float).
-    c_hash_map *hash_map = c_hash_map_create(hash_func_s,
-                                             comp_func_s,
-                                             sizeof(char*),
-                                             sizeof(float),
+    // Создание хэш-отображения.
+    c_hash_map *hash_map = c_hash_map_create(hash_s,
+                                             comp_s,
                                              1000,
                                              1.0f);
 
-    // Вставка элементов в хэш-отображение.
-    const char *const one_key = "one";
-    const char *const two_key = "two";
-    const char *const three_key = "three";
-    float value;
+    // Вставка в хэш-отображение нескольких данных.
 
-    value = 1.0f;
-    c_hash_map_insert(hash_map, &one_key, &value);
+    // Ключи для вставки.
+    const char *const key_a = "War";
+    const char *const key_b = "Goo";
+    const char *const key_c = "Door";
 
-    value = 2.0f;
-    c_hash_map_insert(hash_map, &two_key, &value);
+    float *data;
 
-    value = 3.0f;
-    c_hash_map_insert(hash_map, &three_key, &value);
+    data = (float*)malloc(sizeof(float));
+    *data = 1.1f;
+    c_hash_map_insert(hash_map, key_a, data);
+
+    data = (float*)malloc(sizeof(float));
+    *data = 2.2f;
+    c_hash_map_insert(hash_map, key_b, data);
+
+    data = (float*)malloc(sizeof(float));
+    *data = 3.3f;
+    c_hash_map_insert(hash_map, key_c, data);
 
     // Печать содержимого хэш-отображения.
-    c_hash_map_for_each(hash_map, print_key_func_s, print_data_func_f);
-
+    c_hash_map_for_each(hash_map, key_print, data_print);
     printf("\n");
 
-    // Ужимаем хэш-отображение.
-    c_hash_map_resize(hash_map, 10);
-
-    // Заменяем данные, хранящиеся по ключу two_key,
-    // при этом элемент с заданным ключом не удаляется и не пересоздается,
-    // меняются ТОЛЬКО данные элемента хэш-отображения.
-    float *p_float = c_hash_map_at(hash_map, &two_key);
-    if (p_float != NULL)
-    {
-        *p_float = 3.1415f;
-    }
+    // Удаление из хэш-отображения данных, связанных с ключем key_a ("War").
+    c_hash_map_erase(hash_map, key_a, NULL, del_data);
 
     // Печать содержимого хэш-отображения.
-    c_hash_map_for_each(hash_map, print_key_func_s, print_data_func_f);
-
-    // Очистка хэш-отображения ото всех элементов.
-    c_hash_map_clear(hash_map, NULL, NULL);
+    c_hash_map_for_each(hash_map, key_print, data_print);
+    printf("\n");
 
     // Удаление хэш-отображения.
-    c_hash_map_delete(hash_map, NULL, NULL);
+    // Функция удаления задана только для данных, так как
+    // ключи валяются в секции программы "только для чтения".
+    c_hash_map_delete(hash_map, NULL, del_data);
 
     getchar();
     return 0;
