@@ -7,11 +7,11 @@
 // Проверка возвращаемых значений не выполняется для упрощения.
 
 // Функция генерации хэша из строки.
-size_t hash_s(const void *const _data)
+size_t hash_s(const void *const _key)
 {
-    if (_data == NULL) return 0;
+    if (_key == NULL) return 0;
 
-    const char *c = (char*)_data;
+    const char *c = (char*)_key;
     size_t hash = 0;
     
     while (*c != 0)
@@ -24,7 +24,7 @@ size_t hash_s(const void *const _data)
 
 // Функция детального сравнения ключей-строк.
 size_t comp_s(const void *const _a,
-                   const void *const _b)
+              const void *const _b)
 {
     if ( (_a == NULL) || (_b == NULL) )
     {
