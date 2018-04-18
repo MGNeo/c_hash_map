@@ -106,11 +106,12 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
     {
         // Задаем новое количество слотов с некоторым запасом.
         const size_t new_slots_count = EXTENSION_FROM_ZERO;
+        if (new_slots_count == 0) return -4;
 
         // Попытаемся расширить слоты.
         if (c_hash_map_resize(_hash_map, new_slots_count) < 0)
         {
-            return -4;
+            return -5;
         }
     } else {
         // Если слоты есть, то при достижении предела загруженности увеличиваем количество слотов.
@@ -121,18 +122,18 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
             size_t new_slots_count = _hash_map->slots_count * 1.75f;
             if (new_slots_count < _hash_map->slots_count)
             {
-                return -5;
+                return -6;
             }
             new_slots_count += 1;
             if (new_slots_count == 0)
             {
-                return -6;
+                return -7;
             }
 
             // Попытаемся расширить слоты.
             if (c_hash_map_resize(_hash_map, new_slots_count) < 0)
             {
-                return -7;
+                return -8;
             }
         }
     }
@@ -140,7 +141,7 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
     ptrdiff_t r_code = c_hash_map_check(_hash_map, _key);
 
     // Ошибка.
-    if (r_code < 0) return -8;
+    if (r_code < 0) return -9;
 
     // Данные уже имеются.
     if (r_code > 0) return 0;
@@ -151,7 +152,7 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
     c_hash_map_node *const new_node = (c_hash_map_node*)malloc(sizeof(c_hash_map_node));
     if (new_node == NULL)
     {
-        return -11;
+        return -10;
     }
 
     // Неприведенный хэш ключа вставляемых данных.
