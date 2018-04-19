@@ -18,14 +18,14 @@
 // В случае успеха возвращает указатель на созданное отображение.
 // В случае ошибки возвращает NULL.
 // Позволяет создать хэш-отображение с нулем слотов.
-c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key),
-                              size_t (*const _comp_func)(const void *const _a,
-                                                         const void *const _b),
+c_hash_map *c_hash_map_create(size_t (*const _hash_key)(const void *const _key),
+                              size_t (*const _comp_key)(const void *const _a_key,
+                                                         const void *const _b_key),
                               const size_t _slots_count,
                               const float _max_load_factor)
 {
-    if (_hash_func == NULL) return NULL;
-    if (_comp_func == NULL) return NULL;
+    if (_hash_key == NULL) return NULL;
+    if (_comp_key == NULL) return NULL;
     if (_max_load_factor <= 0.0f) return NULL;
 
     c_hash_map_node **new_slots = NULL;
@@ -56,8 +56,8 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key)
         return NULL;
     }
 
-    new_hash_map->hash_func = _hash_func;
-    new_hash_map->comp_func = _comp_func;
+    new_hash_map->hash_key = _hash_key;
+    new_hash_map->comp_key = _comp_key;
 
     new_hash_map->slots_count = _slots_count;
     new_hash_map->nodes_count = 0;
@@ -72,10 +72,10 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_func)(const void *const _key)
 // Удаляет хэш-отображение.
 // В случае успеха возвращает > 0, иначе < 0.
 ptrdiff_t c_hash_map_delete(c_hash_map *const _hash_map,
-                            void (*const _del_key_func)(void *const _key),
-                            void (*const _del_data_func)(void *const _data))
+                            void (*const _del_key)(void *const _key),
+                            void (*const _del_data)(void *const _data))
 {
-    if (c_hash_map_clear(_hash_map, _del_key_func, _del_data_func) < 0)
+    if (c_hash_map_clear(_hash_map, _del_key, _del_data) < 0)
     {
         return -1;
     }
@@ -152,7 +152,7 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
     }
 
     // Неприведенный хэш ключа вставляемых данных.
-    const size_t hash = _hash_map->hash_func(_key);
+    const size_t hash = _hash_map->hash_key(_key);
 
     // Приведенный хэш ключа вставляемых данных.
     const size_t presented_hash = hash % _hash_map->slots_count;
@@ -167,7 +167,7 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
     new_node->data = (void*)_data;
 
     // Добавляем узел в слот.
-    new_node->next = _hash_map->slots[presented_hash];
+    new_node->next_node = _hash_map->slots[presented_hash];
     _hash_map->slots[presented_hash] = new_node;
 
     ++_hash_map->nodes_count;
@@ -181,8 +181,8 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
 // В случае ошибки возвращает < 0.
 ptrdiff_t c_hash_map_erase(c_hash_map *const _hash_map,
                            const void *const _key,
-                           void (*const _del_key_func)(void *const _key),
-                           void (*const _del_data_func)(void *const _data))
+                           void (*const _del_key)(void *const _key),
+                           void (*const _del_data)(void *const _data))
 {
     if (_hash_map == NULL) return -1;
     if (_key == NULL) return -2;
@@ -190,7 +190,7 @@ ptrdiff_t c_hash_map_erase(c_hash_map *const _hash_map,
     if (_hash_map->nodes_count == 0) return 0;
 
     // Вычислим неприведенный хэш ключа удаляемых данных.
-    const size_t hash = _hash_map->hash_func(_key);
+    const size_t hash = _hash_map->hash_key(_key);
 
     // Вычислим приведенный хэш ключа удаляемых данных.
     const size_t presented_hash = hash % _hash_map->slots_count;
@@ -209,28 +209,28 @@ ptrdiff_t c_hash_map_erase(c_hash_map *const _hash_map,
     {
         if (hash == select_node->hash)
         {
-            if (_hash_map->comp_func(_key, select_node->key) > 0)
+            if (_hash_map->comp_key(_key, select_node->key) > 0)
             {
                 // Удаляем данный узел.
 
                 // Ампутация узла из слота.
                 if (prev_node != NULL)
                 {
-                    prev_node->next = select_node->next;
+                    prev_node->next_node = select_node->next_node;
                 } else {
-                    _hash_map->slots[presented_hash] = select_node->next;
+                    _hash_map->slots[presented_hash] = select_node->next_node;
                 }
 
                 // Если для ключа задана функция удаления, вызываем ее.
-                if (_del_key_func != NULL)
+                if (_del_key != NULL)
                 {
-                    _del_key_func( select_node->key );
+                    _del_key( select_node->key );
                 }
 
                 // Если для данных задана функция удаления, вызываем ее.
-                if (_del_data_func != NULL)
+                if (_del_data != NULL)
                 {
-                    _del_data_func( select_node->data );
+                    _del_data( select_node->data );
                 }
 
                 // Удаляем узел.
@@ -243,7 +243,7 @@ ptrdiff_t c_hash_map_erase(c_hash_map *const _hash_map,
         }
 
         prev_node = select_node;
-        select_node = select_node->next;
+        select_node = select_node->next_node;
     }
 
     return 0;
@@ -308,12 +308,12 @@ ptrdiff_t c_hash_map_resize(c_hash_map *const _hash_map,
                     while (select_node != NULL)
                     {
                         relocate_node = select_node;
-                        select_node = select_node->next;
+                        select_node = select_node->next_node;
 
                         // Хэш ключа переносимого узла, приведенный к новому количеству слотов.
                         const size_t presented_hash = relocate_node->hash % _slots_count;
 
-                        relocate_node->next = new_slots[presented_hash];
+                        relocate_node->next_node = new_slots[presented_hash];
                         new_slots[presented_hash] = relocate_node;
 
                         --count;
@@ -346,7 +346,7 @@ ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
     if (_hash_map->nodes_count == 0) return 0;
 
     // Неприведенный хэш искомого ключа.
-    const size_t hash = _hash_map->hash_func(_key);
+    const size_t hash = _hash_map->hash_key(_key);
 
     // Приведенный хэш искомого ключа.
     const size_t presented_hash = hash % _hash_map->slots_count;
@@ -357,13 +357,13 @@ ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
     {
         if (hash == select_node->hash)
         {
-            if (_hash_map->comp_func(_key, select_node->key) > 0)
+            if (_hash_map->comp_key(_key, select_node->key) > 0)
             {
                 return 1;
             }
         }
 
-        select_node = select_node->next;
+        select_node = select_node->next_node;
     }
 
     return 0;
@@ -381,7 +381,7 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
     if (_hash_map->nodes_count == 0) return NULL;
 
     // Неприведенный хэш искомого ключа.
-    const size_t hash = _hash_map->hash_func(_key);
+    const size_t hash = _hash_map->hash_key(_key);
 
     // Приведенный хэш искомого ключа.
     const size_t presented_hash = hash % _hash_map->slots_count;
@@ -392,13 +392,13 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
     {
         if (hash == select_node->hash)
         {
-            if (_hash_map->comp_func(_key, select_node->key) > 0)
+            if (_hash_map->comp_key(_key, select_node->key) > 0)
             {
                 return select_node->data;
             }
         }
 
-        select_node = select_node->next;
+        select_node = select_node->next_node;
     }
 
     return 0;
@@ -409,12 +409,12 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
 // В случае, если в хэш-отображении нет элементов, возвращает 0.
 // В случае ошибки возвращает < 0.
 ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
-                              void (*const _key_func)(const void *const _key),
-                              void (*const _data_func)(void *const _data))
+                              void (*const _action_key)(const void *const _key),
+                              void (*const _action_data)(void *const _data))
 {
     if (_hash_map == NULL) return -1;
-    if (_key_func == NULL) return -2;
-    if (_data_func == NULL) return -3;
+    if (_action_key== NULL) return -2;
+    if (_action_data == NULL) return -3;
 
     if (_hash_map->nodes_count == 0) return 0;
 
@@ -428,10 +428,10 @@ ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
 
             while (select_node != NULL)
             {
-                _key_func( select_node->key );
-                _data_func( select_node->data );
+                _action_key( select_node->key );
+                _action_data( select_node->data );
 
-                select_node = select_node->next;
+                select_node = select_node->next_node;
 
                 --count;
             }
@@ -460,11 +460,11 @@ ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
         if (_hash_map->slots[s] != NULL)
         {
             c_hash_map_node *select_node = _hash_map->slots[s],
-                 *delete_node;
+                            *delete_node;
             while (select_node != NULL)
             {
                 delete_node = select_node;
-                select_node = select_node->next;
+                select_node = select_node->next_node;
 
                 if (_del_key_func != NULL)
                 {
