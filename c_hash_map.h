@@ -15,10 +15,6 @@
 #ifndef C_HASH_MAP_H
 #define C_HASH_MAP_H
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <memory.h>
 #include <stddef.h>
 
 // Количество слотов, задаваемое хэш-отображению с нулем слотов при автоматическом расширении.
