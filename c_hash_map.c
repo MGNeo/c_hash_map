@@ -133,7 +133,8 @@ ptrdiff_t c_hash_map_delete(c_hash_map *const _hash_map,
 
 // Вставка данных в хэш-отображение.
 // В случае успешной вставки возвращает > 0, ключ и данные захватываются хэш-отображением.
-// Если данные с указанным ключом уже есть в хэш-отображении, функция возвращает 0, ключ и данные не захватываются хэш-отображением.
+// Если данные с указанным ключом уже есть в хэш-отображении, функция возвращает 0,
+// ключ и данные не захватываются хэш-отображением.
 // В случае ошибки возвращает < 0, ключ и данные не захватываются хэш-отображением.
 ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
                             const void *const _key,
@@ -143,7 +144,16 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
     if (_key == NULL) return -2;
     if (_data == NULL) return -3;
 
-    // Первым делом контролируем процесс увеличения количества слотов.
+    // Проверим, имеются ли в хэш-отображении данные с заданным ключом.
+    ptrdiff_t r_code = c_hash_map_check(_hash_map, _key);
+
+    // Ошибка.
+    if (r_code < 0) return -4;
+
+    // Данные уже имеются.
+    if (r_code > 0) return 0;
+
+    // Начинаем вставлять.
 
     // Если слотов нет вообще.
     if (_hash_map->slots_count == 0)
@@ -177,22 +187,12 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
             }
         }
     }
-    // Проверим, имеются ли в хэш-отображении данные с заданным ключом.
-    ptrdiff_t r_code = c_hash_map_check(_hash_map, _key);
-
-    // Ошибка.
-    if (r_code < 0) return -9;
-
-    // Данные уже имеются.
-    if (r_code > 0) return 0;
-
-    // Вставляем.
 
     // Попытаемся выделить память под узел.
     c_hash_map_node *const new_node = (c_hash_map_node*)malloc(sizeof(c_hash_map_node));
     if (new_node == NULL)
     {
-        return -10;
+        return -9;
     }
 
     // Неприведенный хэш ключа вставляемых данных.
