@@ -114,6 +114,10 @@ int main(int argc, char **argv)
     c_hash_map_for_each(hash_map, print_key_s, print_data_f);
     printf("\n");
 
+    // Покажем общую информацию.
+    printf("slots count: %Iu\n", c_hash_map_slots_count(hash_map));
+    printf("nodes count: %Iu\n", c_hash_map_nodes_count(hash_map));
+
     // Удаление хэш-отображения.
     // Функция удаления задана только для данных, так как
     // ключи валяются в секции программы "только для чтения".

@@ -19,6 +19,42 @@
 
 #include "c_hash_map.h"
 
+// Количество слотов, задаваемое хэш-отображению с нулем слотов при автоматическом расширении.
+#define C_HASH_MAP_0 ( (size_t) 1024 )
+
+// Минимально допустимое значение max_load_factor.
+#define C_HASH_MAP_MLF_MIN ( (float) 0.01f )
+
+// Минимально допустимое значение max_load_factor.
+#define C_HASH_MAP_MLF_MAX ( (float) 1.f )
+
+typedef struct s_c_hash_map_node c_hash_map_node;
+
+struct s_c_hash_map_node
+{
+    struct s_c_hash_map_node *next_node;
+    size_t hash;
+    void *key,
+         *data;
+};
+
+struct s_c_hash_map
+{
+    // Функция, генерирующая хэш на основе ключа.
+    size_t (*hash_key)(const void *const _key);
+    // Функция детального сравнения ключей.
+    // В случае идентичности ключей должна возвращать > 0, иначе 0.
+    size_t (*comp_key)(const void *const _key_a,
+                       const void *const _key_b);
+
+    size_t slots_count,
+           nodes_count;
+
+    float max_load_factor;
+
+    c_hash_map_node **slots;
+};
+
 // Создание пустого хэш-отображения.
 // В случае успеха возвращает указатель на созданное отображение.
 // В случае ошибки возвращает NULL.
@@ -31,7 +67,11 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_key)(const void *const _key),
 {
     if (_hash_key == NULL) return NULL;
     if (_comp_key == NULL) return NULL;
-    if (_max_load_factor <= 0.0f) return NULL;
+    if  ( (_max_load_factor < C_HASH_MAP_MLF_MIN) ||
+          (_max_load_factor > C_HASH_MAP_MLF_MAX) )
+    {
+        return NULL;
+    }
 
     c_hash_map_node **new_slots = NULL;
 
@@ -492,4 +532,40 @@ ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
     _hash_map->nodes_count = 0;
 
     return 1;
+}
+
+// Возвращает количество слотов в хэш-отображении.
+// В случае ошибки возвращает 0.
+size_t c_hash_map_slots_count(const c_hash_map *const _hash_map)
+{
+    if (_hash_map == NULL)
+    {
+        return 0;
+    }
+
+    return _hash_map->slots_count;
+}
+
+// Возвращает количество узло в хэш-отображение.
+// В случае ошибки возвращает 0.
+size_t c_hash_map_nodes_count(const c_hash_map *const _hash_map)
+{
+    if (_hash_map == NULL)
+    {
+        return 0;
+    }
+
+    return _hash_map->nodes_count;
+}
+
+// Возвращает коэф. максимальной загрузки хэш-отображения.
+// В случае ошибки возвращает 0.0f.
+float c_hash_map_max_load_factor(const c_hash_map *const _hash_map)
+{
+    if (_hash_map == NULL)
+    {
+        return 0.0f;
+    }
+
+    return _hash_map->max_load_factor;
 }
