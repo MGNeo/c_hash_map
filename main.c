@@ -91,6 +91,7 @@ int main(int argc, char **argv)
 
     float *data;
 
+    // Создаем данные и вставляем.
     data = (float*)malloc(sizeof(float));
     *data = 1.1f;
     c_hash_map_insert(hash_map, key_a, data);
@@ -119,7 +120,7 @@ int main(int argc, char **argv)
     printf("nodes count: %Iu\n", c_hash_map_nodes_count(hash_map));
 
     // Удаление хэш-отображения.
-    // Функция удаления задана только для данных, так как
+    // Функция удаления задана только для данных (которые в куче), так как
     // ключи валяются в секции программы "только для чтения".
     c_hash_map_delete(hash_map, NULL, del_data_f);
 
