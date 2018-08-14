@@ -445,7 +445,7 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
         select_node = select_node->next_node;
     }
 
-    return 0;
+    return NULL;
 }
 
 // Проходит по всем элементам хэш-отображения и выполняет над ключами и данными заданные действия.
