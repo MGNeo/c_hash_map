@@ -449,10 +449,12 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
 }
 
 // Проходит по всем элементам хэш-отображения и выполняет над ключами и данными заданные действия.
+// Ключи нельзя удалять или менять.
+// Данные нельзя удалять, но можно менять.
 // В случае успешного выполнения возвращает > 0.
 // В случае, если в хэш-отображении нет элементов, возвращает 0.
 // В случае ошибки возвращает < 0.
-ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
+ptrdiff_t c_hash_map_for_each(c_hash_map *const _hash_map,
                               void (*const _action_key)(const void *const _key),
                               void (*const _action_data)(void *const _data))
 {

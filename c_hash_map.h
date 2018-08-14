@@ -47,7 +47,7 @@ ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
 void *c_hash_map_at(const c_hash_map *const _hash_map,
                     const void *const _key);
 
-ptrdiff_t c_hash_map_for_each(const c_hash_map *const _hash_map,
+ptrdiff_t c_hash_map_for_each(c_hash_map *const _hash_map,
                               void (*const _action_key)(const void *const _key),
                               void (*const _action_data)(void *const _data));
 

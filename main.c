@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     c_hash_map_for_each(hash_map, print_key_s, print_data_f);
     printf("\n");
 
-    // Удаление из хэш-отображения данных, связанных с ключем key_a ("War").
+    // Удаление из хэш-отображения данных, связанных с ключом key_a ("War").
     c_hash_map_erase(hash_map, key_a, NULL, del_data_f);
 
     // Печать содержимого хэш-отображения.
