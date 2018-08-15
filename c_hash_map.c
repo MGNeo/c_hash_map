@@ -451,6 +451,7 @@ void *c_hash_map_at(const c_hash_map *const _hash_map,
 // Проходит по всем элементам хэш-отображения и выполняет над ключами и данными заданные действия.
 // Ключи нельзя удалять или менять.
 // Данные нельзя удалять, но можно менять.
+// Должно быть задано действие хотя бы для ключа или хотя бы для данных.
 // В случае успешного выполнения возвращает > 0.
 // В случае, если в хэш-отображении нет элементов, возвращает 0.
 // В случае ошибки возвращает < 0.
@@ -459,30 +460,67 @@ ptrdiff_t c_hash_map_for_each(c_hash_map *const _hash_map,
                               void (*const _action_data)(void *const _data))
 {
     if (_hash_map == NULL) return -1;
-    if (_action_key== NULL) return -2;
-    if (_action_data == NULL) return -3;
+    if ( (_action_key == NULL) &&
+         (_action_data == NULL) )
+    {
+        return -2;
+    }
 
     if (_hash_map->nodes_count == 0) return 0;
 
     size_t count = _hash_map->nodes_count;
 
-    for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s)
-    {
-        if (_hash_map->slots[s] != NULL)
-        {
-            c_hash_map_node *select_node = _hash_map->slots[s];
+    // Макросы дублирования кода для избавления от проверок внутри циклов.
 
-            while (select_node != NULL)
+    // Открытие циклов.
+    #define C_HASH_MAP_FOR_EACH_BEGIN\
+    for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s) \
+    {\
+        if (_hash_map->slots[s] != NULL)\
+        {\
+            c_hash_map_node *select_node = _hash_map->slots[s];\
+            while (select_node != NULL)\
             {
-                _action_key( select_node->key );
-                _action_data( select_node->data );
 
-                select_node = select_node->next_node;
+    // Закрытие циклов.
+    #define C_HASH_MAP_FOR_EACH_END\
+                select_node = select_node->next_node;\
+                --count;\
+            }\
+        }\
+    }
 
-                --count;
-            }
+    // Заданы действия и для ключей, и для данных.
+    if ( (_action_key != NULL) && (_action_data != NULL) )
+    {
+        C_HASH_MAP_FOR_EACH_BEGIN
+
+        _action_key( select_node->key );
+        _action_data( select_node->data );
+
+        C_HASH_MAP_FOR_EACH_END
+    } else {
+        // Задано действие только для ключей.
+        if (_action_key != NULL)
+        {
+            C_HASH_MAP_FOR_EACH_BEGIN
+
+            _action_key( select_node->key );
+
+            C_HASH_MAP_FOR_EACH_END
+        } else {
+            // Задано действие только для данных.
+
+            C_HASH_MAP_FOR_EACH_BEGIN
+
+            _action_data( select_node->data );
+
+            C_HASH_MAP_FOR_EACH_END
         }
     }
+
+    #undef C_HASH_MAP_FOR_EACH_BEGIN
+    #undef C_HASH_MAP_FOR_EACH_END
 
     return 1;
 }
@@ -501,34 +539,63 @@ ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
 
     size_t count = _hash_map->nodes_count;
 
-    for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s)
-    {
-        if (_hash_map->slots[s] != NULL)
-        {
-            c_hash_map_node *select_node = _hash_map->slots[s],
-                            *delete_node;
-            while (select_node != NULL)
-            {
-                delete_node = select_node;
+    // Макросы дублирования кода для избавленияот проверок внутри циклов.
+
+    // Открытие циклов.
+    #define C_HASH_MAP_CLEAR_BEGIN\
+    for (size_t s = 0; (s < _hash_map->slots_count)&&(count > 0); ++s)\
+    {\
+        if (_hash_map->slots[s] != NULL)\
+        {\
+            c_hash_map_node *select_node = _hash_map->slots[s],\
+                            *delete_node;\
+            while (select_node != NULL)\
+            {\
+                delete_node = select_node;\
                 select_node = select_node->next_node;
 
-                if (_del_key_func != NULL)
-                {
-                    _del_key_func( delete_node->key );
-                }
+    // Закрытие циклов.
+    #define C_HASH_MAP_CLEAR_END \
+                free(delete_node);\
+                --count;\
+            }\
+            _hash_map->slots[s] = NULL;\
+        }\
+    }
 
-                if (_del_data_func != NULL)
-                {
-                    _del_data_func( delete_node->data );
-                }
+    // Заданы функции удаления и для ключей, и для данных.
+    if ( (_del_key_func != NULL) && (_del_data_func != NULL) )
+    {
+        C_HASH_MAP_CLEAR_BEGIN
 
-                free(delete_node);
-                --count;
+        _del_key_func( delete_node->key );
+        _del_data_func( delete_node->data );
+
+        C_HASH_MAP_CLEAR_END
+    } else {
+        // Задана функция удаления только для ключей.
+        if (_del_key_func != NULL)
+        {
+            C_HASH_MAP_CLEAR_BEGIN
+
+            _del_key_func( delete_node->key );
+
+            C_HASH_MAP_CLEAR_END
+        } else {
+            // Задана функция удаления только для данных.
+            if (_del_data_func != NULL)
+            {
+                C_HASH_MAP_CLEAR_BEGIN
+
+                _del_data_func( delete_node->data );
+
+                C_HASH_MAP_CLEAR_END
             }
-
-            _hash_map->slots[s] = NULL;
         }
     }
+
+    #undef C_HASH_MAP_CLEAR_BEGIN
+    #undef C_HASH_MAP_CLEAR_END
 
     _hash_map->nodes_count = 0;
 
