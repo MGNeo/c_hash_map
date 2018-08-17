@@ -57,7 +57,7 @@ ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
 
 size_t c_hash_map_slots_count(const c_hash_map *const _hash_map);
 
-size_t c_hash_map_nodes_count(const c_hash_map *const _hash_map);
+size_t c_hash_map_pairs_count(const c_hash_map *const _hash_map);
 
 float c_hash_map_max_load_factor(const c_hash_map *const _hash_map);
 

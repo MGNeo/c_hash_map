@@ -616,7 +616,7 @@ size_t c_hash_map_slots_count(const c_hash_map *const _hash_map)
 
 // Возвращает количество узло в хэш-отображение.
 // В случае ошибки возвращает 0.
-size_t c_hash_map_nodes_count(const c_hash_map *const _hash_map)
+size_t c_hash_map_pairs_count(const c_hash_map *const _hash_map)
 {
     if (_hash_map == NULL)
     {

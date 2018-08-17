@@ -48,7 +48,7 @@ void print_key_s(const void *const _key)
     if (_key == NULL) return;
 
     const char *const key = (char*)_key;
-    printf("key: %s ", key);
+    printf("[%s]: ", key);
 
     return;
 }
@@ -59,7 +59,7 @@ void print_data_f(void *const _data)
     if (_data == NULL) return;
 
     const float *data = (float*)_data;
-    printf("data: %f\n", *data);
+    printf("%f\n", *data);
 
     return;
 }
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 
     // Покажем общую информацию.
     printf("slots count: %Iu\n", c_hash_map_slots_count(hash_map));
-    printf("nodes count: %Iu\n", c_hash_map_nodes_count(hash_map));
+    printf("pairs count: %Iu\n", c_hash_map_pairs_count(hash_map));
 
     // Удаление хэш-отображения.
     // Функция удаления задана только для данных (которые в куче), так как
