@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 
     // Добавим другой элемент.
     const char *const key_2 = "Second key";
-    const float data_2 = 6.28;
+    const float data_2 = 2.f;
     {
         const ptrdiff_t r_code = c_hash_map_insert(hash_map, key_2, &data_2);
         // Покажем результат операции.
