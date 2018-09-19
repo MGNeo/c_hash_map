@@ -64,65 +64,87 @@ void print_data_f(void *const _data)
     return;
 }
 
-// Функция удаления данных хэш-отображения.
-void del_data_f(void *const _data)
-{
-    if (_data == NULL) return;
-
-    free(_data);
-
-    return;
-}
-
 int main(int argc, char **argv)
 {
-    // Создание хэш-отображения.
-    c_hash_map *hash_map = c_hash_map_create(hash_key_s,
-                                             comp_key_s,
-                                             1000,
-                                             1.0f);
+    size_t error;
+    c_hash_map *hash_map;
 
-    // Вставка в хэш-отображение нескольких данных.
+    // Попытаемся создать хэш-отображение.
+    hash_map = c_hash_map_create(hash_key_s, comp_key_s, 10, 0.5f, &error);
+    // Если произошла ошибка, покажем ее.
+    if (hash_map == NULL)
+    {
+        printf("create error: %Iu\n", error);
+        printf("Program end.\n");
+        getchar();
+        return -1;
+    }
 
-    // Ключи для вставки.
-    const char *const key_a = "War";
-    const char *const key_b = "Goo";
-    const char *const key_c = "Door";
+    // Добавим в хэш-отображене один элемент.
+    const char *const key_1 = "First key";
+    const float data_1 = 1.f;
+    {
+        const ptrdiff_t r_code = c_hash_map_insert(hash_map, key_1, &data_1);
+        // Покажем результат операции.
+        printf("insert[%s, %f]: %Id\n", key_1, data_1, r_code);
+    }
+    // Вновь добавим тот же самый элемент.
+    {
+        const ptrdiff_t r_code = c_hash_map_insert(hash_map, key_1, &data_1);
+        // Покажем результат операции.
+        printf("insert[%s, %f]: %Id\n", key_1, data_1, r_code);
+    }
 
-    float *data;
+    // Добавим другой элемент.
+    const char *const key_2 = "Second key";
+    const float data_2 = 6.28;
+    {
+        const ptrdiff_t r_code = c_hash_map_insert(hash_map, key_2, &data_2);
+        // Покажем результат операции.
+        printf("insert[%s, %f]: %Id\n", key_2, data_2, r_code);
+    }
 
-    // Создаем данные и вставляем.
-    data = (float*)malloc(sizeof(float));
-    *data = 1.1f;
-    c_hash_map_insert(hash_map, key_a, data);
+    // При помощи обхода хэш-отображения покажем содержимое каждого элемента (каждой пары).
+    {
+        const ptrdiff_t r_code = c_hash_map_for_each(hash_map, print_key_s, print_data_f);
+        // Если возникла ошибка, покажем ее.
+        if (r_code < 0)
+        {
+            printf("for each error, r_code: %Id\n", r_code);
+            printf("Program end.\n");
+            getchar();
+            return -2;
+        }
+    }
 
-    data = (float*)malloc(sizeof(float));
-    *data = 2.2f;
-    c_hash_map_insert(hash_map, key_b, data);
+    // Покажем количество пар в хэш-отображении.
+    {
+        error = 0;
+        const ptrdiff_t p_count = c_hash_map_pairs_count(hash_map, &error);
+        // Если произошла ошибка, покажем ее.
+        if ( (p_count == 0) && (error > 0) )
+        {
+            printf("pairs count error: %Iu\n", error);
+            printf("Program end.\n");
+            getchar();
+            return -3;
+        }
+        // Покажем количество пар.
+        printf("p_count: %Iu\n", p_count);
+    }
 
-    data = (float*)malloc(sizeof(float));
-    *data = 3.3f;
-    c_hash_map_insert(hash_map, key_c, data);
-
-    // Печать содержимого хэш-отображения.
-    c_hash_map_for_each(hash_map, print_key_s, print_data_f);
-    printf("\n");
-
-    // Удаление из хэш-отображения данных, связанных с ключом key_a ("War").
-    c_hash_map_erase(hash_map, key_a, NULL, del_data_f);
-
-    // Печать содержимого хэш-отображения.
-    c_hash_map_for_each(hash_map, print_key_s, print_data_f);
-    printf("\n");
-
-    // Покажем общую информацию.
-    printf("slots count: %Iu\n", c_hash_map_slots_count(hash_map));
-    printf("pairs count: %Iu\n", c_hash_map_pairs_count(hash_map));
-
-    // Удаление хэш-отображения.
-    // Функция удаления задана только для данных (которые в куче), так как
-    // ключи валяются в секции программы "только для чтения".
-    c_hash_map_delete(hash_map, NULL, del_data_f);
+    // Удалим хэш-отображение.
+    {
+        const ptrdiff_t r_code = c_hash_map_delete(hash_map, NULL, NULL);
+        // Если произошла ошибка, покажем ее.
+        if (r_code < 0)
+        {
+            printf("delete error, r_code: %Id\n", r_code);
+            printf("Program end.\n");
+            getchar();
+            return -4;
+        }
+    }
 
     getchar();
     return 0;

@@ -23,7 +23,8 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_key)(const void *const _key),
                               size_t (*const _comp_key)(const void *const _key_a,
                                                         const void *const _key_b),
                               const size_t _slots_count,
-                              const float _max_load_factor);
+                              const float _max_load_factor,
+                              size_t *const _error);
 
 ptrdiff_t c_hash_map_delete(c_hash_map *const _hash_map,
                             void (*const _del_key)(void *const _key),
@@ -45,7 +46,8 @@ ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
                            const void *const _key);
 
 void *c_hash_map_at(const c_hash_map *const _hash_map,
-                    const void *const _key);
+                    const void *const _key,
+                    size_t *const _error);
 
 ptrdiff_t c_hash_map_for_each(c_hash_map *const _hash_map,
                               void (*const _action_key)(const void *const _key),
@@ -55,9 +57,11 @@ ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
                            void (*const _del_key)(void *const _key),
                            void (*const _del_data)(void *const _data));
 
-size_t c_hash_map_slots_count(const c_hash_map *const _hash_map);
+size_t c_hash_map_slots_count(const c_hash_map *const _hash_map,
+                              size_t *const _error);
 
-size_t c_hash_map_pairs_count(const c_hash_map *const _hash_map);
+size_t c_hash_map_pairs_count(const c_hash_map *const _hash_map,
+                              size_t *const _error);
 
 float c_hash_map_max_load_factor(const c_hash_map *const _hash_map);
 

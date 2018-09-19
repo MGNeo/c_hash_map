@@ -55,21 +55,41 @@ struct s_c_hash_map
     c_hash_map_node **slots;
 };
 
+// Если расположение задано, в него помещается код.
+static void error_set(size_t *const _error,
+                      const size_t _code)
+{
+    if (_error != NULL)
+    {
+        *_error = _code;
+    }
+}
+
 // Создание пустого хэш-отображения.
-// В случае успеха возвращает указатель на созданное отображение.
-// В случае ошибки возвращает NULL.
+// В случае ошибки возвращает NULL, и если _error != NULL, в заданное расположение помещается
+// код причины ошибки (> 0).
 // Позволяет создать хэш-отображение с нулем слотов.
 c_hash_map *c_hash_map_create(size_t (*const _hash_key)(const void *const _key),
                               size_t (*const _comp_key)(const void *const _a_key,
                                                          const void *const _b_key),
                               const size_t _slots_count,
-                              const float _max_load_factor)
+                              const float _max_load_factor,
+                              size_t *const _error)
 {
-    if (_hash_key == NULL) return NULL;
-    if (_comp_key == NULL) return NULL;
+    if (_hash_key == NULL)
+    {
+        error_set(_error, 1);
+        return NULL;
+    }
+    if (_comp_key == NULL)
+    {
+        error_set(_error, 2);
+        return NULL;
+    }
     if  ( (_max_load_factor < C_HASH_MAP_MLF_MIN) ||
           (_max_load_factor > C_HASH_MAP_MLF_MAX) )
     {
+        error_set(_error, 3);
         return NULL;
     }
 
@@ -82,22 +102,27 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_key)(const void *const _key),
         if ( (new_slots_size == 0) ||
              (new_slots_size / _slots_count != sizeof(c_hash_map_node*)) )
         {
+            error_set(_error, 4);
             return NULL;
         }
 
         // Попытаемся выделить память под новые слоты.
-        new_slots = (c_hash_map_node**)malloc(new_slots_size);
-        if (new_slots == NULL) return NULL;
-
+        new_slots = malloc(new_slots_size);
+        if (new_slots == NULL)
+        {
+            error_set(_error, 5);
+            return NULL;
+        }
         // Обнулим слоты.
         memset(new_slots, 0, new_slots_size);
     }
 
     // Попытаемся создать хэш-отображение.
-    c_hash_map *const new_hash_map = (c_hash_map*)malloc(sizeof(c_hash_map));
+    c_hash_map *const new_hash_map = malloc(sizeof(c_hash_map));
     if (new_hash_map == NULL)
     {
         free(new_slots);
+        error_set(_error, 6);
         return NULL;
     }
 
@@ -115,7 +140,8 @@ c_hash_map *c_hash_map_create(size_t (*const _hash_key)(const void *const _key),
 }
 
 // Удаляет хэш-отображение.
-// В случае успеха возвращает > 0, иначе < 0.
+// В случае успеха возвращает > 0.
+// В случае ошибки возвращает < 0.
 ptrdiff_t c_hash_map_delete(c_hash_map *const _hash_map,
                             void (*const _del_key)(void *const _key),
                             void (*const _del_data)(void *const _data))
@@ -189,7 +215,7 @@ ptrdiff_t c_hash_map_insert(c_hash_map *const _hash_map,
     }
 
     // Попытаемся выделить память под узел.
-    c_hash_map_node *const new_node = (c_hash_map_node*)malloc(sizeof(c_hash_map_node));
+    c_hash_map_node *const new_node = malloc(sizeof(c_hash_map_node));
     if (new_node == NULL)
     {
         return -9;
@@ -329,7 +355,7 @@ ptrdiff_t c_hash_map_resize(c_hash_map *const _hash_map,
         }
 
         // Попытаемся выделить память под новые слоты.
-        c_hash_map_node **const new_slots = (c_hash_map_node**)malloc(new_slots_size);
+        c_hash_map_node **const new_slots = malloc(new_slots_size);
         if (new_slots == NULL)
         {
             return -4;
@@ -415,12 +441,25 @@ ptrdiff_t c_hash_map_check(const c_hash_map *const _hash_map,
 
 // Обращение к данным с заданным ключом.
 // В случае успеха возвращает указатель на данные, которые связаны с заданным ключом.
-// В случае ошибки, или если таких данных нет, возвращает NULL.
+// Если данных нет, функция возвращает NULL, это не считается ошибкой.
+// В случае ошибки функция возвращает NULL, и если _error != NULL, то в заданное расположение помещается
+// код причины ошибки (> 0).
+// Так как функция может возвращать NULL и в случае успеха, и в случае ошибки, для детектирования ошибки
+// перед вызовом функции необходимо поместить 0 в заданное расположение ошибки.
 void *c_hash_map_at(const c_hash_map *const _hash_map,
-                    const void *const _key)
+                    const void *const _key,
+                    size_t *const _error)
 {
-    if (_hash_map == NULL) return NULL;
-    if (_key == NULL) return NULL;
+    if (_hash_map == NULL)
+    {
+        error_set(_error, 1);
+        return NULL;
+    }
+    if (_key == NULL)
+    {
+        error_set(_error, 2);
+        return NULL;
+    }
 
     if (_hash_map->nodes_count == 0) return NULL;
 
@@ -603,11 +642,16 @@ ptrdiff_t c_hash_map_clear(c_hash_map *const _hash_map,
 }
 
 // Возвращает количество слотов в хэш-отображении.
-// В случае ошибки возвращает 0.
-size_t c_hash_map_slots_count(const c_hash_map *const _hash_map)
+// В случае ошибки возвращает 0, и если _error != NULL, в заданное расположение
+// помещается код причины ошибки (> 0).
+// Так как функция может возвращать 0 и в случае успеха, и в случае ошибки, для детектирования
+// ошибки перед вызовом функции необходимо поместить 0 в заданное расположение ошибки.
+size_t c_hash_map_slots_count(const c_hash_map *const _hash_map,
+                              size_t *const _error)
 {
     if (_hash_map == NULL)
     {
+        error_set(_error, 1);
         return 0;
     }
 
@@ -615,11 +659,16 @@ size_t c_hash_map_slots_count(const c_hash_map *const _hash_map)
 }
 
 // Возвращает количество узло в хэш-отображение.
-// В случае ошибки возвращает 0.
-size_t c_hash_map_pairs_count(const c_hash_map *const _hash_map)
+// В случае ошибки возвращает 0, и если _error != NULL, в заданное расположение помещается
+// код причины ошибки (> 0).
+// Так как функция может возвращать 0 и в случае успеха, и в случае ошибки, для детектирования ошибки
+// перед вызовом функции необходимо поместить 0 в заданное расположение ошибки.
+size_t c_hash_map_pairs_count(const c_hash_map *const _hash_map,
+                              size_t *const _error)
 {
     if (_hash_map == NULL)
     {
+        error_set(_error, 1);
         return 0;
     }
 
